@@ -1,6 +1,5 @@
-require('@nomiclabs/hardhat-waffle');
+require("@nomicfoundation/hardhat-toolbox");
 require('dotenv').config(); 
-const { projectId, mnemonic } = require('./secrets.json'); // Replace with your Infura project ID and mnemonic
 
 module.exports = {
   solidity: "0.8.18",
