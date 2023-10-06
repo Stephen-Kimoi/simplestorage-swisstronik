@@ -1,32 +1,52 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
-// will compile your contracts, add the Hardhat Runtime Environment's members to the
-// global scope, and execute the script.
-const hre = require("hardhat");
+const { ethers } = require('hardhat');
+const hre = require("hardhat"); 
+const fs = require("fs"); 
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  // Deploy to Mumbai testnet
+  console.log('Deploying to Mumbai testnet...');
+  const mumbaiContract = await deployToNetwork('polygon_mumbai');
 
-  const lockedAmount = hre.ethers.utils.parseEther("0.001");
+  // Deploy to Swisstronik testnet
+  console.log('Deploying to Swisstronik testnet...');
+  const swisstronikContract = await deployToNetwork('swisstronik');
 
-  const Lock = await hre.ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  // Create a JSON file with contract addresses and ABIs
+  const contractsInfo = {
+    mumbai: {
+      address: mumbaiContract.address,
+      abi: mumbaiContract.interface.format('json'),
+    },
+    swisstronik: {
+      address: swisstronikContract.target,
+      abi: swisstronikContract.interface.format('json'),
+    },
+  };
 
-  await lock.deployed();
-
-  console.log(
-    `Lock with ${ethers.utils.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`
-  );
+  fs.writeFileSync('deployedContracts.json', JSON.stringify(contractsInfo, null, 2));
+  console.log('Deployed contract addresses and ABIs saved to deployedContracts.json');
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+async function deployToNetwork(networkName) {
+  if (networkName === "polygon_mumbai") {
+    const contractInstance = await ethers.getContractFactory("SimpleStorage")
+    const simpleStorage = await contractInstance.deploy("SimpleStorage", ["First Data"]); 
+    await simpleStorage.waitForDeployment(); 
+
+    console.log(`SimpleStorage contract in  ${networkName} address: `, simpleStorage.target);
+    return simpleStorage;
+
+  } else if (networkName === "swisstronik") {
+    const contract = await hre.ethers.deployContract("SimpleStorage", ["First Data"]);
+    await contract.waitForDeployment();
+    console.log(`SimpleStorage contract in ${networkName} deployed to ${contract.target}`);
+    return contract; 
+  }
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
