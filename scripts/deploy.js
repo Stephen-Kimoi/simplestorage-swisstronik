@@ -14,7 +14,7 @@ async function main() {
   // Create a JSON file with contract addresses and ABIs
   const contractsInfo = {
     mumbai: {
-      address: mumbaiContract.address,
+      address: mumbaiContract.target,
       abi: mumbaiContract.interface.format('json'),
     },
     swisstronik: {
